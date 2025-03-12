@@ -54,10 +54,10 @@ def exibir_kpis_ckan(df_atual, df_anterior):
      tot_org_dados_ult, delta_org_dados) = kpis(df_atual, df_anterior)
 
     col_1, col_2, col_3, col_4 = st.columns(4)
-    col_1.metric("Total de Organizações", orgs_ultimo_mes, delta_orgs)
-    col_2.metric("Organizações com pacotes", tot_org_dados_ult, delta_org_dados)
-    col_3.metric("Total de pacotes", tot_pacotes_ultimo_mes, delta_pacotes)
-    col_4.metric("Total de recursos", int(tot_recursos_ultimo_mes), int(delta_recursos))
+    col_1.container(border=True).metric("Total de Organizações", orgs_ultimo_mes, delta_orgs)
+    col_2.container(border=True).metric("Organizações com pacotes", tot_org_dados_ult, delta_org_dados)
+    col_3.container(border=True).metric("Total de pacotes", tot_pacotes_ultimo_mes, delta_pacotes)
+    col_4.container(border=True).metric("Total de recursos", int(tot_recursos_ultimo_mes), int(delta_recursos))
 
 
 def preparar_dados_grafico(df, organizacao_selecionada):
@@ -82,6 +82,7 @@ def main():
 
     # Carregar dados e criar filtros
     df = main_ckan()
+
     data_atual, data_anterior, organizacao_selecionada = criar_filtros_ckan(df)
     df_atual, df_anterior = filtrar_dados(df, data_atual, data_anterior, organizacao_selecionada)
 
