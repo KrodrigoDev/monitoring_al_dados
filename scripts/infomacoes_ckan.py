@@ -1,12 +1,5 @@
-import sys
-import os
 import streamlit as st
 import pandas as pd
-
-# Obtém o caminho absoluto da pasta raiz do projeto
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from scripts.configuracoes_gerais import config_pagina
 from scripts.mericas_ckan import main_ckan, kpis
 from scripts.visualizacoes import criar_tabela
 
@@ -17,7 +10,7 @@ def criar_filtros_ckan(df: pd.DataFrame):
     with st.sidebar:
         st.subheader('Filtros')
 
-        with st.expander('Ckan', expanded=True):
+        with st.expander('Ckan', expanded=False):
             datas_unicas = df['data_coleta'].unique().tolist()
 
             col_data_atual, col_data_anterior = st.columns(2)
@@ -54,10 +47,10 @@ def exibir_kpis_ckan(df_atual, df_anterior):
      tot_org_dados_ult, delta_org_dados) = kpis(df_atual, df_anterior)
 
     col_1, col_2, col_3, col_4 = st.columns(4)
-    col_1.metric("Total de Organizações", orgs_ultimo_mes, delta_orgs)
-    col_2.metric("Organizações com pacotes", tot_org_dados_ult, delta_org_dados)
-    col_3.metric("Total de pacotes", tot_pacotes_ultimo_mes, delta_pacotes)
-    col_4.metric("Total de recursos", int(tot_recursos_ultimo_mes), int(delta_recursos))
+    col_1.container(border=True).metric("Total de Organizações", orgs_ultimo_mes, delta_orgs)
+    col_2.container(border=True).metric("Organizações com pacotes", tot_org_dados_ult, delta_org_dados)
+    col_3.container(border=True).metric("Total de pacotes", tot_pacotes_ultimo_mes, delta_pacotes)
+    col_4.container(border=True).metric("Total de recursos", int(tot_recursos_ultimo_mes), int(delta_recursos))
 
 
 def preparar_dados_grafico(df, organizacao_selecionada):
@@ -77,13 +70,13 @@ def preparar_dados_grafico(df, organizacao_selecionada):
 
 
 # --- Fluxo Principal ---
-def main():
-    config_pagina('Visão Geral')
+def fluxo_ckan():
 
     # Carregar dados e criar filtros
     df = main_ckan()
-    data_atual, data_anterior, organizacao_selecionada = criar_filtros_ckan(df)
-    df_atual, df_anterior = filtrar_dados(df, data_atual, data_anterior, organizacao_selecionada)
+
+    data_atual_ckan, data_anterior_ckan, organizacao_selecionada = criar_filtros_ckan(df)
+    df_atual, df_anterior = filtrar_dados(df, data_atual_ckan, data_anterior_ckan, organizacao_selecionada)
 
     # Exibir KPIs do CKAN
     st.header("Informações do Ckan")
@@ -93,5 +86,4 @@ def main():
     df_grafico = preparar_dados_grafico(df_atual, organizacao_selecionada)
     criar_tabela(df_grafico, df_grafico.columns[0], renomear=False)
 
-
-main()
+    return df_atual, df_anterior, data_atual_ckan, data_anterior_ckan
