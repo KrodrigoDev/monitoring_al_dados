@@ -1,5 +1,12 @@
+import sys
+import os
 import streamlit as st
 import pandas as pd
+
+# Obtém o caminho absoluto da pasta raiz do projeto
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from scripts.configuracoes_gerais import config_pagina
 from scripts.mericas_ckan import main_ckan, kpis
 from scripts.visualizacoes import criar_tabela
 
@@ -10,7 +17,7 @@ def criar_filtros_ckan(df: pd.DataFrame):
     with st.sidebar:
         st.subheader('Filtros')
 
-        with st.expander('Ckan', expanded=False):
+        with st.expander('Ckan', expanded=True):
             datas_unicas = df['data_coleta'].unique().tolist()
 
             col_data_atual, col_data_anterior = st.columns(2)
@@ -70,13 +77,14 @@ def preparar_dados_grafico(df, organizacao_selecionada):
 
 
 # --- Fluxo Principal ---
-def fluxo_ckan():
+def main():
+    config_pagina('Visão Geral')
 
     # Carregar dados e criar filtros
     df = main_ckan()
 
-    data_atual_ckan, data_anterior_ckan, organizacao_selecionada = criar_filtros_ckan(df)
-    df_atual, df_anterior = filtrar_dados(df, data_atual_ckan, data_anterior_ckan, organizacao_selecionada)
+    data_atual, data_anterior, organizacao_selecionada = criar_filtros_ckan(df)
+    df_atual, df_anterior = filtrar_dados(df, data_atual, data_anterior, organizacao_selecionada)
 
     # Exibir KPIs do CKAN
     st.header("Informações do Ckan")
@@ -86,4 +94,5 @@ def fluxo_ckan():
     df_grafico = preparar_dados_grafico(df_atual, organizacao_selecionada)
     criar_tabela(df_grafico, df_grafico.columns[0], renomear=False)
 
-    return df_atual, df_anterior, data_atual_ckan, data_anterior_ckan
+
+main()

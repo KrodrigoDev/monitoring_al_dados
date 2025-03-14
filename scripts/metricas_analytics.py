@@ -10,10 +10,10 @@ from google.analytics.data_v1beta.types import (
 )
 
 # Definir o caminho do arquivo de credenciais do Analytics
-os.environ[
-    "GOOGLE_APPLICATION_CREDENTIALS"] = r'C:\Users\Kauã Rodrigo\Documents\scripts_python\monitoring_al_dados\data\credencias_analytics.json'
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = './credencias_analytics.json'
 
 
+# --- Funções do Google Analytics ---
 def executar_relatorio_analytics(property_id, data_inicial, data_final, dimensoes=None):
     """
     Executa um relatório no Google Analytics 4 e retorna uma lista de dicionários com métricas e dimensões.
@@ -100,7 +100,7 @@ def carregar_metricas_analytics(property_id="366628261", data_anterior="2024-09-
     df = pd.DataFrame([metricas_atual[0]])
     df_deltas = pd.DataFrame([deltas])
 
-    return df, df_deltas, data_atual_anterior, data_anterior_anterior
+    return df, df_deltas
 
 
 def dimensoes_analytics(property_id="366628261", data_anterior="2024-09-01", data_atual="2024-09-30", dimensao=None):
