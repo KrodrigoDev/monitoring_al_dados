@@ -1,12 +1,5 @@
-import sys
-import os
 import streamlit as st
 import pandas as pd
-
-# Obtém o caminho absoluto da pasta raiz do projeto
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from scripts.configuracoes_gerais import config_pagina
 from scripts.mericas_ckan import main_ckan, kpis
 from scripts.visualizacoes import criar_tabela
 
@@ -17,23 +10,24 @@ def criar_filtros_ckan(df: pd.DataFrame):
     with st.sidebar:
         st.subheader('Filtros')
 
-        with st.expander('Ckan', expanded=True):
+        with st.expander('Ckan', expanded=False):
             datas_unicas = df['data_coleta'].unique().tolist()
 
-            col_data_atual, col_data_anterior = st.columns(2)
-            data_atual = col_data_atual.selectbox('Data Atual', datas_unicas, index=len(datas_unicas) - 1)
-            data_anterior = col_data_anterior.selectbox('Data Anterior', datas_unicas, index=0)
+            col_data_anterior, col_data_atual = st.columns(2)
+            data_inicio = col_data_anterior.selectbox('Início do período', datas_unicas, index=0)
+            data_fim = col_data_atual.selectbox('Fim do período', datas_unicas, index=len(datas_unicas) - 1)
 
             # Validar se a data atual é maior ou igual à data anterior
-            if pd.to_datetime(data_atual) < pd.to_datetime(data_anterior):
-                st.error("A data atual não pode ser menor que a data anterior. Por favor, selecione datas válidas.")
+            if pd.to_datetime(data_fim) < pd.to_datetime(data_inicio):
+                st.error(
+                    "A data de início não pode ser posterior à data de fim. Selecione um período válido.")
                 st.stop()  # Interrompe a execução do código
 
             organizacao_selecionada = st.selectbox(
                 'Selecionar Organização:', ['Selecionar tudo'] + list(df['nome_organizacao'].unique())
             )
 
-    return data_atual, data_anterior, organizacao_selecionada
+    return data_fim, data_inicio, organizacao_selecionada
 
 
 def filtrar_dados(df, data_atual, data_anterior, organizacao_selecionada):
@@ -77,14 +71,15 @@ def preparar_dados_grafico(df, organizacao_selecionada):
 
 
 # --- Fluxo Principal ---
-def main():
-    config_pagina('Visão Geral')
-
+def fluxo_ckan():
     # Carregar dados e criar filtros
     df = main_ckan()
 
-    data_atual, data_anterior, organizacao_selecionada = criar_filtros_ckan(df)
-    df_atual, df_anterior = filtrar_dados(df, data_atual, data_anterior, organizacao_selecionada)
+    data_atual_ckan, data_anterior_ckan, organizacao_selecionada = criar_filtros_ckan(df)
+    df_atual, df_anterior = filtrar_dados(df, data_atual_ckan, data_anterior_ckan, organizacao_selecionada)
+
+    # data_atual, data_anterior, organizacao_selecionada = criar_filtros_ckan(df)
+    # df_atual, df_anterior = filtrar_dados(df, data_atual, data_anterior, organizacao_selecionada)
 
     # Exibir KPIs do CKAN
     st.header("Informações do Ckan")
@@ -94,5 +89,4 @@ def main():
     df_grafico = preparar_dados_grafico(df_atual, organizacao_selecionada)
     criar_tabela(df_grafico, df_grafico.columns[0], renomear=False)
 
-
-main()
+    return df_atual, df_anterior, data_atual_ckan, data_anterior_ckan

@@ -1,34 +1,56 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime
 from scripts.metricas_analytics import carregar_metricas_analytics, dimensoes_analytics
 from scripts.visualizacoes import criar_tabela
 
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 
 def criar_filtros_analytics(dimensoes_disponiveis):
-    """Cria os filtros na sidebar com datas organizadas por mês desde janeiro até a data atual."""
+    """Cria um filtro na sidebar para selecionar um mês e obter o primeiro e último dia do período."""
+
     with st.sidebar:
         with st.expander('Analytics', expanded=False):
-            # Definir a data inicial como janeiro do ano atual
-            data_atual = datetime.today()
-            data_min = datetime(2023, 1, 1)
+            data_hoje = datetime.today()
+            data_min = datetime(2023, 5, 1)
 
-            # Criar a lista de datas por mês desde janeiro até o mês atual
-            datas_mensais = pd.date_range(start=data_min, end=data_atual, freq='ME').strftime('%d/%m/%Y').tolist()
+            # Criar lista de datas de início e fim do mês
+            datas_inicio = pd.date_range(start=data_min, end=data_hoje, freq='MS')  # MS = início do mês
+            datas_fim = [data + relativedelta(day=31) for data in datas_inicio]  # Último dia do mês
 
-            col_data_atual, col_data_anterior = st.columns(2)
-            data_atual = col_data_atual.selectbox('Data Atual', datas_mensais, index=len(datas_mensais) - 1)
-            data_anterior = col_data_anterior.selectbox('Data Anterior', datas_mensais, index=len(datas_mensais) - 2)
+            # Formatar datas como string (DD/MM/YYYY)
+            datas_inicio_fmt = [data.strftime('%d/%m/%Y') for data in datas_inicio]
+            datas_fim_fmt = [data.strftime('%d/%m/%Y') for data in datas_fim]
 
-            # Validar se a data atual é maior ou igual à data anterior
-            if pd.to_datetime(data_atual, dayfirst=True) < pd.to_datetime(data_anterior, dayfirst=True):
-                st.error("A data atual não pode ser menor que a data anterior. Por favor, selecione datas válidas.")
+            col_data_inicio, col_data_fim = st.columns(2)
+
+            # Criar selectboxes para selecionar início e fim do período
+            data_inicio = col_data_inicio.selectbox(
+                "Início do período",
+                datas_inicio_fmt,
+                index=0
+            )
+
+            data_fim = col_data_fim.selectbox(
+                "Fim do período",
+                datas_fim_fmt,
+                index=len(datas_fim_fmt) - 1
+            )
+
+            if pd.to_datetime(data_fim) < pd.to_datetime(data_inicio):
+                st.error(
+                    "A data de início não pode ser posterior à data de fim. Selecione um período válido.")
                 st.stop()  # Interrompe a execução do código
 
-            dimensao_selecionada = st.selectbox("Escolha uma dimensão:", list(dimensoes_disponiveis.keys()),
-                                                format_func=lambda x: dimensoes_disponiveis[x])
+            # Escolher dimensão
+            dimensao_selecionada = st.selectbox(
+                "Escolha uma dimensão:",
+                list(dimensoes_disponiveis.keys()),
+                format_func=lambda x: dimensoes_disponiveis[x]
+            )
 
-    return data_atual, data_anterior, dimensao_selecionada
+    return data_fim, data_inicio, dimensao_selecionada
 
 
 def exibir_kpis_analytics(df_analytics, df_analytics_deltas):
@@ -69,21 +91,21 @@ def fluxo_analytics():
         'pageTitle': 'Título da Página',
     }
 
-    data_atual, data_anterior, dimensao_selecionada = criar_filtros_analytics(dimensoes_disponiveis)
+    data_fim, data_inicio, dimensao_selecionada = criar_filtros_analytics(dimensoes_disponiveis)
 
     st.header("Informações do Analytics")
 
     df_analytics, df_analytics_deltas, data_inicio_anterior, data_fim_anterior = carregar_metricas_analytics(
-        data_anterior=str(data_anterior),
-        data_atual=str(data_atual))
+        data_anterior=str(data_inicio),
+        data_atual=str(data_fim))
 
     exibir_kpis_analytics(df_analytics, df_analytics_deltas)
 
     # Exibir informações desagregadas
     st.subheader("Informações Desagregadas")
 
-    df_dim = dimensoes_analytics(dimensao=[dimensao_selecionada], data_anterior=data_anterior, data_atual=data_atual)
+    df_dim = dimensoes_analytics(dimensao=[dimensao_selecionada], data_anterior=data_inicio, data_atual=data_fim)
 
     criar_tabela(df_dim, dimensao_selecionada, dimensoes_disponiveis[dimensao_selecionada], True)
 
-    return df_analytics, df_analytics_deltas, data_atual, data_anterior, data_inicio_anterior, data_fim_anterior
+    return df_analytics, df_analytics_deltas, data_fim, data_inicio, data_inicio_anterior, data_fim_anterior

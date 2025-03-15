@@ -6,8 +6,7 @@ import streamlit as st
 from datetime import datetime
 
 # Carregar a API key do CKAN
-API_KEY_CKAN = dotenv_values(r'C:\Users\kaua.barbos\Documents\GitHub\monitoring_al_dados\data\credenciais.env')[
-    'API_KEY_CKAN']
+API_KEY_CKAN = dotenv_values('../monitoring_al_dados/data/credenciais.env')['API_KEY_CKAN']
 
 # Conectar à instância CKAN
 ckan = RemoteCKAN('https://dados.al.gov.br/catalogo', apikey=API_KEY_CKAN)
@@ -102,7 +101,7 @@ def main_ckan():
     """
     Carrega ou atualiza as métricas do CKAN a partir de um arquivo Excel.
     """
-    arquivo = pathlib.Path(r'C:\Users\kaua.barbos\Documents\GitHub\monitoring_al_dados\data\metricas_ckan.xlsx')
+    arquivo = pathlib.Path('../monitoring_al_dados/data/metricas_ckan.xlsx')
 
     if arquivo.exists():
         df = pd.read_excel(arquivo)
@@ -114,7 +113,10 @@ def main_ckan():
     df = df.drop_duplicates(subset=['data_coleta', 'nome_pacote', 'nome_organizacao'])
 
     # tratando a coluna de data para seguir o padrão br
-    df['data_coleta'] = pd.to_datetime(df['data_coleta'], errors='coerce').dt.strftime('%d/%m/%Y')
+    df['data_coleta'] = pd.to_datetime(df['data_coleta'], format='%d/%m/%Y', errors='coerce')
+    df['data_coleta'] = df['data_coleta'].dt.strftime('%d/%m/%Y')
+
+    df.dropna(subset='data_coleta', inplace=True)
 
     df.to_excel(arquivo, index=False)
 

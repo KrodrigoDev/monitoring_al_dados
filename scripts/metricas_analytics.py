@@ -10,7 +10,9 @@ from google.analytics.data_v1beta.types import (
 )
 
 # Definir o caminho do arquivo de credenciais do Analytics
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = './credencias_analytics.json'
+
+os.environ[
+    "GOOGLE_APPLICATION_CREDENTIALS"] = r'C:\Users\Kauã Rodrigo\Documents\scripts_python\monitoring_al_dados\data\credencias_analytics.json'
 
 
 # --- Funções do Google Analytics ---
@@ -72,25 +74,39 @@ def executar_relatorio_analytics(property_id, data_inicial, data_final, dimensoe
     return dados
 
 
-def carregar_metricas_analytics(property_id="366628261", data_anterior="2024-09-01", data_atual="2024-09-30"):
+def carregar_metricas_analytics(property_id="366628261", data_anterior="01/09/2024", data_atual="30/09/2024"):
     """
     Carrega as métricas do Google Analytics e calcula as variações em relação ao período anterior.
 
     :param property_id: ID da propriedade do Google Analytics.
-    :param data_anterior: Data inicial do período anterior no formato "DD/MM/YYYY".
+    :param data_anterior: Data inicial do período atual no formato "DD/MM/YYYY".
     :param data_atual: Data final do período atual no formato "DD/MM/YYYY".
     :return: Dois DataFrames, um com as métricas atuais e outro com as variações.
     """
+
+    # Converter as datas para objetos datetime
+    data_anterior_dt = datetime.strptime(data_anterior, "%d/%m/%Y").date()
+    data_atual_dt = datetime.strptime(data_atual, "%d/%m/%Y").date()
+
+    # Garantir que a data de início seja menor ou igual à data de fim
+    if data_anterior_dt > data_atual_dt:
+        raise ValueError(f"A data de início ({data_anterior}) não pode ser maior que a data de fim ({data_atual}).")
+
+    # Calcular o intervalo do período atual
+    intervalo = data_atual_dt - data_anterior_dt
+
+    # Determinar o período anterior com base no intervalo
+    data_atual_anterior_dt = data_anterior_dt - timedelta(days=1)
+    data_anterior_anterior_dt = data_atual_anterior_dt - intervalo
+
+    # Converter de volta para string no formato desejado
+    data_anterior_anterior = data_anterior_anterior_dt.strftime("%d/%m/%Y")
+    data_atual_anterior = data_atual_anterior_dt.strftime("%d/%m/%Y")
+
     # Obter métricas para o período atual
     metricas_atual = executar_relatorio_analytics(property_id, data_anterior, data_atual)
 
-    # Calcular o mês anterior
-    data_anterior_dt = datetime.strptime(data_anterior, "%d/%m/%Y").date()
-    mes_anterior = data_anterior_dt.replace(day=1) - timedelta(days=1)
-    data_anterior_anterior = mes_anterior.replace(day=1).strftime("%d/%m/%Y")
-    data_atual_anterior = mes_anterior.strftime("%d/%m/%Y")
-
-    # Obter métricas para o mês anterior
+    # Obter métricas para o período anterior
     metricas_anterior = executar_relatorio_analytics(property_id, data_anterior_anterior, data_atual_anterior)
 
     # Calcular diferenças entre os períodos (deltas)
@@ -100,7 +116,7 @@ def carregar_metricas_analytics(property_id="366628261", data_anterior="2024-09-
     df = pd.DataFrame([metricas_atual[0]])
     df_deltas = pd.DataFrame([deltas])
 
-    return df, df_deltas
+    return df, df_deltas, data_atual_anterior, data_anterior_anterior
 
 
 def dimensoes_analytics(property_id="366628261", data_anterior="2024-09-01", data_atual="2024-09-30", dimensao=None):

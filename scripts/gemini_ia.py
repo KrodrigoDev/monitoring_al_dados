@@ -25,7 +25,7 @@ def gerar_resumo(df_ckan, df_analytics, df_deltas, data_atual_ckan, data_anterio
     Você é um analista de dados. Resuma o relatório abaixo, destacando tendências e mudanças entre os períodos comparados:
 
     **Período CKAN:** {data_anterior_ckan} até {data_atual_ckan}
-    **Período Analytics:** {data_anterior_analytics} até {data_atual_analytics} em comparação ao período de {data_inicio_anterior} até {data_fim_anterior}
+    **Período Analytics:** {data_anterior_analytics} até {data_atual_analytics} em comparação {data_fim_anterior} até {data_inicio_anterior}
 
     **Dados do CKAN:**
     - Total de Organizações: {df_ckan['Total de Organizações']}
