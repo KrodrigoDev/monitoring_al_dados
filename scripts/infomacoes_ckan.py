@@ -74,6 +74,7 @@ def preparar_dados_grafico(df, organizacao_selecionada):
 def fluxo_ckan():
     # Carregar dados e criar filtros
     df = main_ckan()
+    df['qtd_recurso_pacote'] = pd.to_numeric(df['qtd_recurso_pacote'], errors='coerce')
 
     data_atual_ckan, data_anterior_ckan, organizacao_selecionada = criar_filtros_ckan(df)
     df_atual, df_anterior = filtrar_dados(df, data_atual_ckan, data_anterior_ckan, organizacao_selecionada)

@@ -1,9 +1,9 @@
 import pandas as pd
 from ckanapi import RemoteCKAN
 from dotenv import dotenv_values
-import pathlib
 import streamlit as st
 from datetime import datetime
+from scripts.google_sheets import consumir_dados, atualizar_planilha
 
 # Carregar a API key do CKAN
 API_KEY_CKAN = dotenv_values('../monitoring_al_dados/data/credenciais.env')['API_KEY_CKAN']
@@ -98,26 +98,16 @@ def kpis(df_atual, df_anterior):
 
 @st.cache_data
 def main_ckan():
-    """
-    Carrega ou atualiza as métricas do CKAN a partir de um arquivo Excel.
-    """
-    arquivo = pathlib.Path('../monitoring_al_dados/data/metricas_ckan.xlsx')
+    df_atual = listar_organizacoes()
+    df_anterior = consumir_dados()
 
-    if arquivo.exists():
-        df = pd.read_excel(arquivo)
-        df = pd.concat([df, listar_organizacoes()], ignore_index=True)
+    if df_anterior['data_coleta'].iloc[-1] != df_atual['data_coleta'].iloc[0]:
+        atualizar_planilha(df_atual.values.tolist())
+
+        df_combinado = pd.concat([df_anterior, df_atual], ignore_index=True).drop_duplicates(
+            subset=['data_coleta', 'nome_pacote', 'nome_organizacao'])
+
+        return df_combinado
     else:
-        df = listar_organizacoes()
-
-    # retirando as duplicatas ( para caso tenha entrado mais de uma vez no dia)
-    df = df.drop_duplicates(subset=['data_coleta', 'nome_pacote', 'nome_organizacao'])
-
-    # tratando a coluna de data para seguir o padrão br
-    df['data_coleta'] = pd.to_datetime(df['data_coleta'], format='%d/%m/%Y', errors='coerce')
-    df['data_coleta'] = df['data_coleta'].dt.strftime('%d/%m/%Y')
-
-    df.dropna(subset='data_coleta', inplace=True)
-
-    df.to_excel(arquivo, index=False)
-
-    return df
+        print("A data de hoje já está registrada. Nenhuma atualização necessária.")
+        return df_anterior

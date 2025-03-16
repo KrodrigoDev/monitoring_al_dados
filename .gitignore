@@ -1,2 +1,4 @@
 data/credencias_analytics.json
 data/credenciais.env
+data/token.json
+data/client_secret.json
